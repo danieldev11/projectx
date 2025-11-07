@@ -10,6 +10,10 @@ export interface Env {
 const LEAD_ROUTE = '/forms/lead';
 const HEALTH_ROUTE = '/health';
 const MAX_PAYLOAD_BYTES = 64 * 1024; // 64 KB
+// Keep these headers in sync with n8n's webhook verification expectations.
+const SIGNATURE_HEADER = 'X-Signature';
+const TRACE_HEADER = 'X-Trace-Id';
+const UPSTREAM_TIMEOUT_MS = 5000;
 
 export default {
 	async fetch(request: Request, env: Env): Promise<Response> {
@@ -33,7 +37,7 @@ export default {
 		}
 
 		if (url.pathname === LEAD_ROUTE && request.method === 'POST') {
-			return cors.wrap(origin, await handleLead(request, env));
+			return cors.wrap(origin, await handleLead(request, env, cors, origin));
 		}
 
 		return cors.wrap(
@@ -43,64 +47,98 @@ export default {
 	}
 };
 
-async function handleLead(request: Request, env: Env): Promise<Response> {
-	const contentLengthHeader = request.headers.get('content-length');
-	if (contentLengthHeader && Number(contentLengthHeader) > MAX_PAYLOAD_BYTES) {
-		return jsonResponse({ error: 'Payload too large' }, 413);
+async function handleLead(request: Request, env: Env, cors: Cors, origin: string): Promise<Response> {
+	if (!origin || !cors.isAllowed(origin)) {
+		return jsonResponse({ error: 'origin_not_allowed' }, 403);
 	}
 
-	const bodyText = await request.text();
-	if (new TextEncoder().encode(bodyText).byteLength > MAX_PAYLOAD_BYTES) {
-		return jsonResponse({ error: 'Payload too large' }, 413);
+	const contentType = request.headers.get('Content-Type') ?? request.headers.get('content-type');
+	if (!isJsonContentType(contentType)) {
+		return jsonResponse({ error: 'unsupported_media_type' }, 415);
+	}
+
+	const contentLengthHeader = request.headers.get('content-length');
+	if (contentLengthHeader && Number(contentLengthHeader) > MAX_PAYLOAD_BYTES) {
+		return jsonResponse({ error: 'payload_too_large' }, 413);
+	}
+
+	const originalBodyText = await request.text();
+	if (new TextEncoder().encode(originalBodyText).byteLength > MAX_PAYLOAD_BYTES) {
+		return jsonResponse({ error: 'payload_too_large' }, 413);
 	}
 
 	let payload: Record<string, unknown>;
 	try {
-		payload = JSON.parse(bodyText);
+		payload = JSON.parse(originalBodyText);
 	} catch {
-		return jsonResponse({ error: 'Invalid JSON body' }, 400);
+		return jsonResponse({ error: 'invalid_json' }, 400);
 	}
 
 	if (!isObject(payload)) {
-		return jsonResponse({ error: 'Body must be a JSON object' }, 400);
+		return jsonResponse({ error: 'invalid_json' }, 400);
+	}
+
+	let traceId = extractString(payload.trace_id);
+	let payloadMutated = false;
+	if (!traceId) {
+		traceId = crypto.randomUUID();
+		payload.trace_id = traceId;
+		payloadMutated = true;
 	}
 
 	const name = extractString(payload.name);
 	const email = extractString(payload.email);
 
 	if (!name || !name.trim()) {
-		return jsonResponse({ error: 'Missing required field: name' }, 400);
+		return jsonResponse({ error: 'missing_fields', field: 'name', trace_id: traceId }, 400);
 	}
 
 	if (!email || !email.includes('@')) {
-		return jsonResponse({ error: 'Invalid email address' }, 400);
+		return jsonResponse({ error: 'missing_fields', field: 'email', trace_id: traceId }, 400);
 	}
 
-	const signature = await createSignature(env.SIGNING_SECRET, bodyText);
+	const forwardBody = payloadMutated ? JSON.stringify(payload) : originalBodyText;
+	const signature = await createSignature(env.SIGNING_SECRET, forwardBody);
 	const target = buildWebhookUrl(env.N8N_BASE_URL, env.N8N_WEBHOOK_PATH);
 
-	const upstreamResponse = await fetch(target, {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-			'X-Signature': signature
-		},
-		body: bodyText
-	});
+	const controller = new AbortController();
+	const timeoutId = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
+
+	let upstreamResponse: Response;
+	try {
+		upstreamResponse = await fetch(target, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				[SIGNATURE_HEADER]: signature,
+				[TRACE_HEADER]: traceId
+			},
+			body: forwardBody,
+			signal: controller.signal
+		});
+	} catch (error) {
+		clearTimeout(timeoutId);
+		if (error instanceof Error && error.name === 'AbortError') {
+			return jsonResponse({ error: 'upstream_timeout', trace_id }, 502);
+		}
+		return jsonResponse({ error: 'upstream_error', trace_id }, 502);
+	}
+	clearTimeout(timeoutId);
 
 	if (!upstreamResponse.ok) {
 		const text = await safeText(upstreamResponse);
 		return jsonResponse(
 			{
-				error: 'Upstream webhook call failed',
+				error: 'upstream_error',
 				status: upstreamResponse.status,
-				detail: text.slice(0, 200)
+				detail: text.slice(0, 200),
+				trace_id
 			},
 			502
 		);
 	}
 
-	return jsonResponse({ ok: true });
+	return jsonResponse({ ok: true, trace_id });
 }
 
 async function createSignature(secret: string, payload: string): Promise<string> {
@@ -144,6 +182,13 @@ function isObject(value: unknown): value is Record<string, unknown> {
 
 function extractString(value: unknown): string | null {
 	return typeof value === 'string' ? value : null;
+}
+
+function isJsonContentType(value: string | null): boolean {
+	if (!value) {
+		return false;
+	}
+	return value.split(';', 1)[0].trim().toLowerCase() === 'application/json';
 }
 
 class Cors {
@@ -201,5 +246,9 @@ class Cors {
 				Vary: 'Origin'
 			}
 		});
+	}
+
+	isAllowed(origin: string): boolean {
+		return Boolean(origin && this.origins.has(origin));
 	}
 }

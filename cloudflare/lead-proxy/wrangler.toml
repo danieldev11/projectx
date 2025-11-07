@@ -17,6 +17,11 @@ ALLOWED_ORIGINS = "https://hayai.cc,https://www.hayai.cc"
 N8N_BASE_URL = "https://hayai.app.n8n.cloud"
 N8N_WEBHOOK_PATH = "/webhook-test/test"
 
+[env.production]
+workers_dev = false
+routes = [
+  { pattern = "api.hayai.cc/forms/lead*", zone_name = "hayai.cc" }
+]
 
 [env.production]
 [env.production.vars]
@@ -29,4 +34,10 @@ N8N_WEBHOOK_PATH = "/webhook/test"
 # Bind secrets using:
 #   wrangler secret put SIGNING_SECRET
 
+[observability]
+[observability.logs]
+enabled = false
+head_sampling_rate = 1
+invocation_logs = true
+persist = true
 
