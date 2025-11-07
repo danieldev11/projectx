@@ -1,0 +1,74 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Hero from '../components/Hero.astro';
+import TrustBar from '../components/TrustBar.astro';
+import OperatingSystem from '../components/OperatingSystem.astro';
+import LeadForm from '../components/LeadForm.astro';
+
+const stats = [
+	{ value: '5.2x', label: 'Follow-up rate' },
+	{ value: '14m', label: 'Avg. response time' },
+	{ value: '67%', label: 'More booked jobs' }
+];
+
+const leadEndpoint = import.meta.env.PUBLIC_LEAD_ENDPOINT ?? 'https://api.hayai.cc/forms/lead';
+---
+
+<Layout title="ProjectX - Lead Pipeline" description="Automate lead intake and follow-up with an Astro frontend, Cloudflare Worker proxy, n8n automations, and Supabase reporting.">
+	<Hero stats={stats} />
+	<TrustBar />
+
+	<section class="relative mx-auto max-w-5xl px-6 py-12 lg:px-8">
+		<div class="grid gap-10 lg:grid-cols-[1.1fr_0.9fr]">
+			<div class="flex flex-col gap-5">
+				<h2 class="text-3xl font-semibold text-brand-text sm:text-4xl">Ready to reclaim your pipeline?</h2>
+				<p class="text-base text-brand-subtle">
+					Ditch the duct tape. We'll help you launch a private intake system with an Astro front-end, Cloudflare edge guard,
+					n8n automations, and Supabase reporting that belongs to you, not a vendor.
+				</p>
+				<ul class="space-y-3 text-sm text-brand-subtle">
+					<li class="flex items-center gap-3">
+						<span class="inline-flex h-2 w-2 rounded-full bg-brand-accent"></span>
+						<span>Launch a branded landing page in days, not weeks.</span>
+					</li>
+					<li class="flex items-center gap-3">
+						<span class="inline-flex h-2 w-2 rounded-full bg-brand-accent"></span>
+						<span>Plug leads directly into automations you already run.</span>
+					</li>
+					<li class="flex items-center gap-3">
+						<span class="inline-flex h-2 w-2 rounded-full bg-brand-accent"></span>
+						<span>Keep sensitive data inside your Supabase instance.</span>
+					</li>
+				</ul>
+			</div>
+
+			<LeadForm endpoint={leadEndpoint} />
+		</div>
+	</section>
+
+	<OperatingSystem />
+
+	<section class="mx-auto max-w-6xl px-6 pb-24 lg:px-8">
+		<div class="flex flex-col gap-6 rounded-3xl border border-border/60 bg-brand-surface/70 p-10 text-center">
+			<h2 class="text-3xl font-semibold text-brand-text sm:text-4xl">Let's build your lead desk</h2>
+			<p class="mx-auto max-w-3xl text-base text-brand-subtle">
+				We'll map your current process, deploy the Worker + n8n + Supabase stack, and hand over a playbook your team can run without us.
+				Own the infrastructure, own the relationship.
+			</p>
+			<div class="flex flex-col gap-3 sm:flex-row sm:justify-center">
+				<a
+					class="inline-flex items-center justify-center rounded-lg border border-brand-accent/60 px-6 py-3 text-base font-semibold text-brand-accent transition hover:border-brand-accent hover:text-brand-text"
+					href="mailto:hello@projectx.dev"
+				>
+					Book a working session
+				</a>
+				<a
+					class="inline-flex items-center justify-center rounded-lg bg-brand-accent px-6 py-3 text-base font-semibold text-brand-background shadow-halo transition hover:shadow-card"
+					href="#lead-form"
+				>
+					Submit a project brief
+				</a>
+			</div>
+		</div>
+	</section>
+</Layout>

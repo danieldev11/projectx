@@ -1,0 +1,36 @@
+---
+import '../styles/globals.css';
+
+interface Props {
+	title?: string;
+	description?: string;
+}
+
+const { title = 'ProjectX - Lead Operations', description = 'Own your leads with a private workflow that connects landing pages, automation, and analytics.' } =
+	Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="generator" content={Astro.generator} />
+		<title>{title}</title>
+		<meta name="description" content={description} />
+		<slot name="head" />
+	</head>
+	<body class="min-h-screen bg-brand-background text-brand-text">
+		<div class="relative min-h-screen overflow-hidden">
+			<div
+				class="pointer-events-none absolute inset-0 -z-10 bg-grid-soft opacity-40 [background-size:32px_32px]"
+				role="presentation"
+			/>
+			<div class="pointer-events-none absolute bottom-[-10rem] right-[-8rem] -z-10 h-[28rem] w-[28rem] rounded-full bg-brand-secondary/30 blur-[120px]" />
+			<main class="relative z-10">
+				<slot />
+			</main>
+		</div>
+	</body>
+</html>

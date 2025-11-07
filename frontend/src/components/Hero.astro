@@ -1,0 +1,81 @@
+---
+const { stats = [] } = Astro.props;
+---
+
+<section class="relative mx-auto flex max-w-6xl flex-col gap-12 px-6 py-16 sm:py-24 lg:px-8">
+	<div class="grid gap-10 lg:grid-cols-[1.4fr_1fr] lg:items-center">
+		<div class="flex flex-col gap-6">
+			<div class="inline-flex max-w-fit items-center gap-2 rounded-full border border-border/60 bg-brand-surface/70 px-3 py-1 text-xs uppercase tracking-[0.2em] text-brand-subtle">
+				Built for operators
+			</div>
+			<h1 class="text-4xl font-semibold leading-tight text-brand-text sm:text-5xl lg:text-6xl">
+				A modern lead desk for contractors who still close deals by phone
+			</h1>
+			<p class="text-lg text-brand-subtle sm:max-w-xl">
+				ProjectX captures every form, call, and message then routes it through automations you control. No bloated CRM, no monthly surprises-just a private workflow that nudges prospects until they book.
+			</p>
+			<ul class="grid gap-3 text-sm text-brand-subtle sm:grid-cols-2 sm:text-base">
+				<li class="flex items-start gap-3">
+					<span class="mt-1 inline-flex h-2 w-2 rounded-full bg-brand-accent"></span>
+					<span>Secure Cloudflare proxy keeps bots out and data in your stack.</span>
+				</li>
+				<li class="flex items-start gap-3">
+					<span class="mt-1 inline-flex h-2 w-2 rounded-full bg-brand-accent"></span>
+					<span>n8n workflows push leads to Supabase, notifications, and CRM.</span>
+				</li>
+				<li class="flex items-start gap-3">
+					<span class="mt-1 inline-flex h-2 w-2 rounded-full bg-brand-accent"></span>
+					<span>Tailored dashboards surface response times and close rates.</span>
+				</li>
+				<li class="flex items-start gap-3">
+					<span class="mt-1 inline-flex h-2 w-2 rounded-full bg-brand-accent"></span>
+					<span>Own your infrastructure from day one-no black boxes.</span>
+				</li>
+			</ul>
+		</div>
+
+		<div class="relative">
+			<div class="absolute -inset-6 -z-10 rounded-3xl bg-brand-secondary/20 blur-[80px]" role="presentation"></div>
+			<div class="flex flex-col gap-6 rounded-3xl border border-border/60 bg-brand-surface/80 p-6 shadow-card backdrop-blur">
+				<div class="rounded-2xl border border-border/40 bg-brand-background/80 p-6">
+					<p class="text-xs font-semibold uppercase tracking-[0.3em] text-brand-subtle">
+						Automation snapshot
+					</p>
+					<ul class="mt-4 space-y-4 text-sm text-brand-subtle">
+						<li class="flex items-start gap-3">
+							<span class="mt-1 h-2 w-2 rounded-full bg-emerald-400"></span>
+							<div>
+								<p class="font-medium text-brand-text">Lead intake &gt; Supabase</p>
+								<p class="text-xs text-brand-subtle">Captures name, email, service, budget, source.</p>
+							</div>
+						</li>
+						<li class="flex items-start gap-3">
+							<span class="mt-1 h-2 w-2 rounded-full bg-amber-400"></span>
+							<div>
+								<p class="font-medium text-brand-text">Immediate follow-up</p>
+								<p class="text-xs text-brand-subtle">Fire Postmark &amp; SMS reminders inside five minutes.</p>
+							</div>
+						</li>
+						<li class="flex items-start gap-3">
+							<span class="mt-1 h-2 w-2 rounded-full bg-sky-400"></span>
+							<div>
+								<p class="font-medium text-brand-text">Routing &amp; scoring</p>
+								<p class="text-xs text-brand-subtle">Send hot leads to sales; drip the rest automatically.</p>
+							</div>
+						</li>
+					</ul>
+				</div>
+				{stats.length ? (
+					<div class="grid gap-4 sm:grid-cols-3">
+						{stats.map((stat) => (
+							<div class="rounded-xl border border-border/50 bg-brand-background/60 p-4 text-center">
+								<p class="text-2xl font-semibold text-brand-text">{stat.value}</p>
+								<p class="text-xs uppercase tracking-[0.2em] text-brand-subtle">{stat.label}</p>
+							</div>
+						))}
+					</div>
+				) : null}
+			</div>
+		</div>
+	</div>
+</section>

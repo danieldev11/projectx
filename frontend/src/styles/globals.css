@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+	color-scheme: light;
+}
+
+body {
+	@apply bg-brand-background text-brand-text font-body antialiased;
+}
+
+a {
+	@apply text-brand-accent transition-colors duration-150;
+}
+
+a:hover {
+	@apply text-brand-text;
+}

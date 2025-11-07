@@ -1,0 +1,178 @@
+---
+interface Props {
+	endpoint?: string;
+}
+
+const fallbackEndpoint = import.meta.env.PUBLIC_LEAD_ENDPOINT ?? 'https://api.hayai.cc/forms/lead';
+const { endpoint = fallbackEndpoint } = Astro.props;
+---
+
+<form
+	id="lead-form"
+	data-endpoint={endpoint}
+	class="relative flex flex-col gap-6 rounded-xl border border-border bg-brand-surface/80 p-8 shadow-card backdrop-blur"
+	autocomplete="off"
+>
+	<div class="flex flex-col gap-2">
+		<div class="inline-flex items-center gap-2">
+			<span class="rounded-full bg-brand-secondary/20 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-brand-text/80">
+				Start here
+			</span>
+			<p class="text-sm text-brand-subtle">We typically reply within one business day.</p>
+		</div>
+		<h2 class="text-2xl font-semibold text-brand-text">Tell us about your project</h2>
+	</div>
+
+	<div class="grid gap-4 sm:grid-cols-2">
+		<label class="flex flex-col gap-1 text-sm font-medium text-brand-subtle">
+			Name
+			<input
+				name="name"
+				required
+				class="rounded-lg border border-border bg-brand-background/70 px-4 py-2 text-base text-brand-text placeholder:text-brand-subtle/70 focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/30"
+				placeholder="Jordan Rivera"
+			/>
+		</label>
+
+		<label class="flex flex-col gap-1 text-sm font-medium text-brand-subtle">
+			Email
+			<input
+				type="email"
+				name="email"
+				required
+				class="rounded-lg border border-border bg-brand-background/70 px-4 py-2 text-base text-brand-text placeholder:text-brand-subtle/70 focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/30"
+				placeholder="jordan@contractingco.com"
+			/>
+		</label>
+
+		<label class="flex flex-col gap-1 text-sm font-medium text-brand-subtle">
+			Service need
+			<select
+				name="service_type"
+				class="rounded-lg border border-border bg-brand-background/70 px-4 py-2 text-base text-brand-text focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/30"
+			>
+				<option value="">Select one</option>
+				<option value="website-refresh">Website refresh</option>
+				<option value="service-automation">Service automation</option>
+				<option value="lead-routing">Lead routing + follow-up</option>
+				<option value="other">Something else</option>
+			</select>
+		</label>
+
+		<label class="flex flex-col gap-1 text-sm font-medium text-brand-subtle">
+			Budget range
+			<select
+				name="budget"
+				class="rounded-lg border border-border bg-brand-background/70 px-4 py-2 text-base text-brand-text focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/30"
+			>
+				<option value="">Undecided</option>
+				<option value="under-2k">Under $2,000</option>
+				<option value="2k-5k">$2,000 - $5,000</option>
+				<option value="5k-10k">$5,000 - $10,000</option>
+				<option value="10k-plus">$10,000+</option>
+			</select>
+		</label>
+	</div>
+
+	<label class="flex flex-col gap-1 text-sm font-medium text-brand-subtle">
+		Project details
+		<textarea
+			name="message"
+			rows={4}
+			class="rounded-lg border border-border bg-brand-background/70 px-4 py-2 text-base text-brand-text placeholder:text-brand-subtle/70 focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/30"
+			placeholder="Share a quick overview of the work, timelines, and how we can help."
+		/>
+	</label>
+
+	<!-- Honeypot -->
+	<input
+		type="text"
+		name="website"
+		tabindex="-1"
+		autocomplete="off"
+		class="hidden"
+	/>
+
+	<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+		<p id="form-feedback" class="text-sm text-brand-subtle" aria-live="polite"></p>
+		<button
+			type="submit"
+			class="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-brand-accent px-5 py-3 text-base font-semibold text-brand-background shadow-halo transition hover:shadow-card focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/60 sm:w-auto"
+			data-default-label="Send request"
+		>
+			Send request
+		</button>
+	</div>
+</form>
+
+<script>
+	const form = document.getElementById('lead-form');
+	if (form) {
+		const feedback = document.getElementById('form-feedback');
+		const submitButton = form.querySelector('button[type="submit"]');
+		const endpoint = form.dataset.endpoint;
+
+		const setFeedback = (message, tone = 'info') => {
+			if (!feedback) return;
+			const tones = {
+				info: 'text-brand-subtle',
+				success: 'text-emerald-300',
+				error: 'text-red-300'
+			};
+			feedback.textContent = message;
+			feedback.className = `text-sm font-medium ${tones[tone] ?? tones.info}`;
+		};
+
+		form.addEventListener('submit', async (event) => {
+			event.preventDefault();
+
+			const honeypot = form.querySelector('[name="website"]');
+			if (honeypot && honeypot.value) {
+				return;
+			}
+
+			const data = Object.fromEntries(new FormData(form).entries());
+			if (!data.name || !data.email) {
+				setFeedback('Please include both your name and email so we can follow up.', 'error');
+				return;
+			}
+
+			if (!endpoint) {
+				setFeedback('Lead endpoint is not configured yet.', 'error');
+				return;
+			}
+
+			submitButton.disabled = true;
+			submitButton.textContent = 'Sending...';
+			setFeedback('Preparing your request...');
+
+			try {
+				const response = await fetch(endpoint, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						name: data.name,
+						email: data.email,
+						service_type: data.service_type || '',
+						budget: data.budget || '',
+						message: data.message || '',
+						submittedAt: new Date().toISOString()
+					})
+				});
+
+				if (!response.ok) {
+					throw new Error(`Request failed with status ${response.status}`);
+				}
+
+				setFeedback('Thanks! We received your project details and will reach out shortly.', 'success');
+				form.reset();
+			} catch (error) {
+				console.error(error);
+				setFeedback('Something went wrong sending your request. Please try again.', 'error');
+			} finally {
+				submitButton.disabled = false;
+				submitButton.textContent = submitButton.dataset.defaultLabel || 'Send request';
+			}
+		});
+	}
+</script>

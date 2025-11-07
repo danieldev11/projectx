@@ -1,0 +1,23 @@
+---
+const logos = [
+	{ name: 'Summit Roofing', caption: 'First 90-days: +42% booked jobs' },
+	{ name: 'Atlas Electric', caption: 'Response time down to 14 minutes' },
+	{ name: 'Northline HVAC', caption: 'Lead loss cut by 65%' }
+];
+---
+
+<section class="mx-auto max-w-6xl px-6 pb-12 lg:px-8">
+	<div class="rounded-3xl border border-border/50 bg-brand-surface/60 p-6 text-brand-subtle backdrop-blur">
+		<p class="text-xs uppercase tracking-[0.3em] text-brand-subtle/70">
+			Trusted by operators who outwork the competition
+		</p>
+		<div class="mt-6 grid gap-6 sm:grid-cols-3">
+			{logos.map((logo) => (
+				<div class="rounded-2xl border border-border/40 bg-brand-background/80 p-5 shadow-inner shadow-brand-background/20">
+					<p class="text-lg font-semibold text-brand-text">{logo.name}</p>
+					<p class="mt-2 text-sm text-brand-subtle">{logo.caption}</p>
+				</div>
+			))}
+		</div>
+	</div>
+</section>
